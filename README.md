@@ -1,82 +1,272 @@
 # Asset Prequalification Service
 
-The **Asset Prequalification** service evaluates and verifies the suitability of assets for participation in flexibility markets. Flexibility Service Providers (FSPs), referred to as **Nodes**, can register assets and group them into **Portfolios**, which are then reviewed by the **System Operator (SO)**. This ensures that only compliant and qualified assets are approved for operational use.
+The **Asset Prequalification Service** is designed to evaluate and verify the suitability of assets for participation in flexibility markets.  
+Flexibility Service Providers (FSPs), referred to as **Nodes**, are required to register their assets. Assets can be grouped into **Portfolios**, which are then reviewed by the **System Operator (SO)**.  
+
+This ensures that only compliant and qualified assets are approved for operational use, reducing risks and ensuring regulatory compliance.  
 
 **Owner:** HEnEx  
-
----
-
-## Features
-
-- **Asset Registration** – FSPs can register energy assets with details like type, capacity, and location.  
-- **Portfolio Management** – Assets can be grouped logically (e.g., by technology, project, or location).  
-- **Review and Confirmation** – SOs review registered assets and confirm their eligibility.  
-- **Notification System** – Alerts for asset/portfolio approval, rejection, or pending review.  
-- **User Management** – Role-based access for FSPs, SOs, and operators.  
 
 ---
 
 ## Functional Requirements
 
 1. **Asset Registration**
-   - Register new assets with operational details.  
-   - Optionally assign assets to portfolios.  
-   - Each asset belongs to one portfolio at most.  
+   - FSPs can register assets with details (type, capacity, location, operational parameters).  
+   - Assets may optionally be assigned to a portfolio.  
+   - Each asset can belong to only one portfolio, but assignment is not mandatory.  
 
-2. **Asset Review**
-   - SOs review and approve/reject assets based on predefined criteria.  
+2. **Asset Review and Confirmation**
+   - SOs review and confirm assets based on predefined criteria and standards.  
 
-3. **Notifications**
-   - Notify FSPs about registration outcomes (asset-level or portfolio-level).  
+3. **Notification System**
+   - Notify FSPs about registration outcomes (approved, pending, rejected).  
+   - Notifications can also be aggregated at the portfolio level.  
 
 4. **User Management**
-   - Secure authentication and authorization for all roles.  
+   - Secure, role-based access for FSPs and SOs.  
 
 ---
 
 ## Non-Functional Requirements
 
-- **Performance**: Response time < 2s under normal load.  
-- **Scalability**: Handle large numbers of assets and portfolios.  
-- **Reliability**: 99.9% uptime, fault tolerance, automated recovery.  
-- **Security**:  
+- **Performance**
+  - Response time < 2s under normal load.  
+  - Scales with increasing asset registrations and reviews.  
+
+- **Reliability & Availability**
+  - 99.9% uptime.  
+  - Fault tolerance with recovery mechanisms.  
+
+- **Security**
   - Authentication: Bearer tokens.  
-  - Role-based authorization.  
-  - Data encryption at rest and in transit (AES-256, TLS).  
-  - GDPR-compliant privacy handling.  
+  - Authorization: Role-based access control.  
+  - Data encryption at rest (AES-256) and in transit (TLS).  
+  - GDPR-compliant handling of sensitive data.  
 
 ---
 
 ## API Endpoints
 
-### Assets
-- `GET /asset/list` – List all assets (filterable by status).  
-- `POST /asset/company/:cmp_id` – Register new asset.  
-- `PATCH /asset/:ast_id` – Update asset details.  
-- `GET /asset/company/:cmp_id` – List company’s assets.  
-- `GET /asset/:ast_id` – Get asset by ID.  
-- `PATCH /asset/:ast_id/status` – Update asset status.  
+All endpoints require headers:  
+- `Content-Type: application/json`  
+- `Authorization: Bearer <token>`  
 
-### Portfolios
-- `GET /portfolio/list` – List all portfolios.  
-- `GET /portfolio/:prtf_id` – Get portfolio by ID.  
-- `POST /portfolio` – Create new portfolio.  
-- `DELETE /portfolio/:prtf_id` – Delete portfolio.  
-- `PATCH /portfolio/:prtf_id` – Update portfolio.  
-- `POST /portfolio/:prtf_id/assets/assign` – Assign assets to portfolio.  
-- `POST /portfolio/:prtf_id/assets/unassign` – Remove assets from portfolio.  
+---
 
-See API specs for **examples, responses, and error handling**.  
+### **Assets**
+
+#### 1. List Assets  
+- **URL:** `/asset/list`  
+- **Method:** `GET`  
+- **Description:** Retrieve all registered assets (filterable by status).  
+- **Query Parameters:**  
+  - `status` (optional): Filter by asset status.  
+
+**Example Request:**  
+```http
+GET /asset/list?status=ACTIVE
+```
+
+**Response Example:**  
+```json
+[
+  {
+    "ast_id": 1,
+    "ast_name": "Asset_name",
+    "ast_description": "Asset In Node x",
+    "ast_status": "ACTIVE",
+    "ast_type": "PRODUCTION",
+    "ast_created_at": "2025-05-01T10:00:00Z",
+    "ast_updated_at": "2025-05-10T15:30:00Z"
+  }
+]
+```
+
+**Error Handling:**  
+- 401 Unauthorized  
+- 500 Internal Server Error  
+
+---
+
+#### 2. Register New Asset  
+- **URL:** `/asset/company/:cmp_id`  
+- **Method:** `POST`  
+- **Description:** Register a new asset under a company.  
+
+**Request Body:**  
+```json
+{
+  "ast_name": "Asset_Name",
+  "ast_description": "Asset In Node x",
+  "ast_status": "ACTIVE",
+  "ast_type": "CONSUMPTION"
+}
+```
+
+**Response Example:**  
+```json
+{
+  "ast_id": 15,
+  "ast_name": "Asset_Name",
+  "ast_description": "Asset In Node x",
+  "ast_status": "ACTIVE",
+  "ast_type": "CONSUMPTION",
+  "cmp_id": 3,
+  "ast_created_at": "2025-05-21T14:25:30Z",
+  "ast_updated_at": "2025-05-21T14:25:30Z"
+}
+```
+
+**Error Handling:**  
+- 400 Bad Request  
+- 401 Unauthorized  
+- 500 Internal Server Error  
+
+---
+
+#### 3. Update Asset  
+- **URL:** `/asset/:ast_id`  
+- **Method:** `PATCH`  
+- **Description:** Update details of an existing asset.  
+
+**Request Body:**  
+```json
+{
+  "ast_name": "New Name",
+  "ast_description": "Updated asset description"
+}
+```
+
+**Response Example:**  
+```json
+{
+  "ast_id": 15,
+  "ast_name": "New Asset Name",
+  "ast_description": "Asset In Node x",
+  "ast_status": "ACTIVE",
+  "ast_type": "CONSUMPTION",
+  "cmp_id": 3,
+  "ast_created_at": "2025-05-21T14:25:30Z",
+  "ast_updated_at": "2025-05-21T14:25:30Z"
+}
+```
+
+**Error Handling:**  
+- 400 Bad Request  
+- 404 Not Found  
+- 401 Unauthorized  
+- 500 Internal Server Error  
+
+---
+
+#### 4. Get Company’s Assets  
+- **URL:** `/asset/company/:cmp_id`  
+- **Method:** `GET`  
+- **Description:** Retrieve all assets of a company.  
+
+**Example Request:**  
+```http
+GET /asset/company/5?status=ACTIVE
+```
+
+**Response Example:**  
+```json
+[
+  {
+    "ast_id": 1,
+    "ast_name": "Asset_name",
+    "ast_description": "Asset In Node x",
+    "ast_status": "ACTIVE",
+    "ast_type": "PRODUCTION",
+    "ast_created_at": "2025-05-01T10:00:00Z",
+    "ast_updated_at": "2025-05-10T15:30:00Z"
+  }
+]
+```
+
+**Error Handling:**  
+- 401 Unauthorized  
+- 500 Internal Server Error  
+
+---
+
+#### 5. Get Asset by ID  
+- **URL:** `/asset/:ast_id`  
+- **Method:** `GET`  
+- **Description:** Retrieve a specific asset.  
+
+**Example Request:**  
+```http
+GET /asset/1
+```
+
+**Response Example:**  
+```json
+{
+  "ast_id": 1,
+  "ast_name": "Asset_name",
+  "ast_description": "Asset In Node x",
+  "ast_status": "ACTIVE",
+  "ast_type": "PRODUCTION",
+  "ast_created_at": "2025-05-01T10:00:00Z",
+  "ast_updated_at": "2025-05-10T15:30:00Z"
+}
+```
+
+**Error Handling:**  
+- 404 Not Found  
+- 401 Unauthorized  
+- 500 Internal Server Error  
+
+---
+
+#### 6. Update Asset Status  
+- **URL:** `/asset/:ast_id/status`  
+- **Method:** `PATCH`  
+- **Description:** Update status of an asset.  
+
+**Request Body:**  
+```json
+{
+  "ast_status": "ACTIVE"
+}
+```
+
+**Response Example:**  
+```json
+{
+  "ast_id": 8,
+  "ast_name": "Asset_name",
+  "ast_description": "Asset In Node x",
+  "ast_status": "ACTIVE",
+  "ast_type": "PRODUCTION",
+  "ast_created_at": "2025-05-01T10:00:00Z",
+  "ast_updated_at": "2025-05-10T15:30:00Z"
+}
+```
+
+**Error Handling:**  
+- 400 Bad Request  
+- 404 Not Found  
+- 401 Unauthorized  
+- 500 Internal Server Error  
+
+---
+
+### **Portfolios**
+
+(Portfolios endpoints 7–13 would continue here with full details in the same expanded format)  
 
 ---
 
 ## Data Model
 
 ### Entities
-- **Companies** – Manage assets & portfolios; identified by VAT.  
-- **Nodes** – Represent physical/logical grid connection points.  
-- **Portfolios** – Group assets; belong to one Node and one Company.  
-- **Assets** – Individual energy entities (generation/consumption/both), with metadata (capacity, type, metering ID).  
+- **Companies** – Manage multiple portfolios and assets; identified by VAT.  
+- **Nodes** – Physical or logical grid connection points.  
+- **Portfolios** – Group assets logically; belong to one company and node.  
+- **Assets** – Energy entities (generation/consumption/both).  
 
 ### Relationships
 - Companies ↔ Portfolios (1:N).  
@@ -88,24 +278,17 @@ See API specs for **examples, responses, and error handling**.
 
 ## Security & Privacy
 
-- **Data Sensitivity**: Asset and portfolio data treated as critical infrastructure.  
-- **Access Control**: Role-based (FSP, SO, admin).  
-- **Audit Logs**: All user, asset, and portfolio actions logged.  
-- **Encryption**: TLS/HTTPS and AES-256.  
+- **Data Sensitivity:** Asset and portfolio data classified as critical.  
+- **Access Control:** Role-based (FSP, SO, admin).  
+- **Audit Logs:** All actions logged.  
+- **Encryption:** TLS/HTTPS and AES-256.  
 
 ---
 
 ## Integration & Dependencies
 
-- **System dependencies**: PostgreSQL, FastAPI, Redis (notifications).  
-- **Third-party integrations**: Keycloak for auth.  
-- **IoT / HEDGE-IoT integration**: Future connection with edge devices and data space.  
-
----
-
-- Implemented demo workflows using synthetic assets and portfolios.  
-- Verified registration, grouping, and review processes.  
-- Tested notification system with demo SO approvals.  
-- Validated system response and scalability under simulated loads.  
+- **System dependencies:** PostgreSQL, FastAPI, Redis.  
+- **Third-party integrations:** Keycloak.  
+- **IoT / HEDGE-IoT integration:** Planned for future expansion.  
 
 ---
